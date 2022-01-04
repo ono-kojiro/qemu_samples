@@ -312,40 +312,61 @@ sdk_ext()
 
 }
 
+default_target()
+{
+  echo "default_target called"
+  target=$1
+
+  while [ "$#" -ne 0 ]; do
+    shift
+  done
+    
+  cd $build_dir/poky
+  . ./oe-init-build-env > /dev/null 2>&1
+  env | sort
+  pwd
+  cmd="bitbake -c $cmd $target"
+  echo $cmd
+  $cmd
+  cd $top_dir
+}
+
+cmd=""
+
+while [ "$#" -ne 0 ]; do
+  case "$1" in
+    -h | --help)
+      ;;
+	-v | --version)
+	  ;;
+	-l | --logfile)
+      shift	
+	  logfile=$1
+	  ;;
+    -c | --command)
+	  shift
+	  cmd=$1
+	  ;;
+	*)
+	  break
+	  ;;
+  esac
+
+  shift
+
+done
+
 
 if [ "x$@" = "x" ]; then
   usage
   exit
 fi
 
-logfile=""
-
-while getopts hvl: option
-do
-	case "$option" in
-		h)
-			usage;;
-		v)
-			verbose=1;;
-		l)
-			logfile=$OPTARG;;
-		*)
-			echo unknown option "$option";;
-	esac
-done
-
-shift $(($OPTIND-1))
-
-if [ "x$logfile" != "x" ]; then
-	echo logfile is $logfile
-fi
-
 for target in "$@" ; do
 	LANG=C type $target | grep function > /dev/null 2>&1
-	res=$?
-	if [ "x$res" = "x0" ]; then
+	if [ "$?" -eq 0 ]; then
 		$target
 	else
-		make $target
+	    default_target $target
 	fi
 done
