@@ -12,7 +12,8 @@ fi
 
 . ./config.bashrc
 
-image=core-image-minimal
+#image=core-image-minimal
+image=core-image-base
     
 disk1="$build_dir/disk1.ext4"
 
@@ -195,6 +196,10 @@ IMAGE_INSTALL_append = " iperf3"
 IMAGE_INSTALL_append = " gdb"
 
 IMAGE_INSTALL_append = " e2fsprogs"
+
+IMAGE_INSTALL_append = " oprofile"
+IMAGE_INSTALL_append = " strace"
+IMAGE_INSTALL_append = " valgrind"
 EOS
 
   cd $top_dir
