@@ -92,29 +92,30 @@ clone()
 checkout()
 {
     cd $build_dir
+	branch="rocko"
 
     if [ ! -d meta-openembedded ]; then
         echo ERROR : no meta-openembedded directory
     else
-        git -C meta-openembedded checkout rocko
+        git -C meta-openembedded checkout $branch
     fi
 
     if [ ! -d meta-virtualization ]; then
         echo ERROR : no meta-virtualization directory
     else
-        git -C meta-virtualization checkout rocko
+        git -C meta-virtualization checkout $branch
     fi
     
     if [ ! -d meta-cloud-services ]; then
         echo ERROR : no meta-cloud-services directory
     else
-	git -C meta-cloud-services checkout rocko
+	git -C meta-cloud-services checkout $branch
     fi
 
     if [ ! -d poky ]; then
         echo ERROR : no poky directory
     else
-        git -C poky checkout rocko
+        git -C poky checkout $branch
     fi
 
     cd $top_dir
@@ -158,6 +159,9 @@ config()
 
   cat - << "EOS" >> conf/local.conf
 EXTRA_IMAGE_FEATURES_append = " tools-profile"
+EXTRA_IMAGE_FEATURES_append = " tools-debug dbg-pkgs"
+
+TOOLCHAIN_TARGET_TASK_append = " kernel-devsrc"
 
 #40 Gbytes of extra space with the line:
 IMAGE_ROOTFS_EXTRA_SPACE = "41943040"
@@ -200,6 +204,10 @@ IMAGE_INSTALL_append = " e2fsprogs"
 IMAGE_INSTALL_append = " oprofile"
 IMAGE_INSTALL_append = " strace"
 IMAGE_INSTALL_append = " valgrind"
+
+IMAGE_INSTALL_append = " systemtap"
+IMAGE_INSTALL_append = " make"
+IMAGE_INSTALL_append = " packagegroup-core-buildessential"
 EOS
 
   cd $top_dir
@@ -212,6 +220,16 @@ build()
     bitbake $image
     cd $top_dir
 }
+
+debug()
+{
+    cd $build_dir/poky
+    . ./oe-init-build-env
+    bitbake -c clean systemtap-native
+    bitbake systemtap-native
+    cd $top_dir
+}
+
 
 disk()
 {
