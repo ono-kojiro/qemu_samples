@@ -1,2 +1,2 @@
-build_dir=`pwd`/rocko
+work_dir=`pwd`/rocko
 

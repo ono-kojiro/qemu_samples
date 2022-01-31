@@ -6,16 +6,18 @@ cd $top_dir
 if [ ! -e ./config.bashrc ]; then
     echo "ERROR : no config.bashrc in $top_dir"
     echo "Please create $top_dir/config.bashrc"
-    echo "and define build_dir variable."
+    echo "and define work_dir variable."
     exit 1
 fi
 
 . ./config.bashrc
 
+build_dir=build
+
 #image=core-image-minimal
 image=core-image-base
     
-disk1="$build_dir/disk1.ext4"
+disk1="$work_dir/disk1.ext4"
 
 tools="chrpath gawk makeinfo"
 for tool in $tools; do
@@ -44,7 +46,7 @@ usage()
     echo "    show_layers, show_recipes, show_images"
     echo ""
     echo "  variables"
-    echo "    build_dir   $build_dir"
+    echo "    work_dir   $work_dir"
 	exit 0
 }
 
@@ -55,8 +57,8 @@ all()
         
 clone()
 {
-    mkdir -p $build_dir
-    cd $build_dir
+    mkdir -p $work_dir
+    cd $work_dir
 
     if [ ! -d meta-openembedded ]; then
         git clone \
@@ -91,7 +93,7 @@ clone()
 
 checkout()
 {
-    cd $build_dir
+    cd $work_dir
 	branch="rocko"
 
     if [ ! -d meta-openembedded ]; then
@@ -109,7 +111,7 @@ checkout()
     if [ ! -d meta-cloud-services ]; then
         echo ERROR : no meta-cloud-services directory
     else
-	git -C meta-cloud-services checkout $branch
+     	git -C meta-cloud-services checkout $branch
     fi
 
     if [ ! -d poky ]; then
@@ -123,28 +125,27 @@ checkout()
 
 ls()
 {
-  command ls -l $build_dir
+  command ls -l $work_dir
 }
 
 
 config()
 {
-    mkdir -p $build_dir
-    cd $build_dir
+    cmd="rm -rf $work_dir/build/conf"
+    echo $cmd
+    $cmd
 
-    cd poky
-    echo removing build/conf...
-    rm -rf build/conf
-    echo done.
-    . ./oe-init-build-env
+    cd $work_dir
+    pwd
+    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
 
     {
       echo ""
-      echo "BBLAYERS_append = \" ../../meta-openembedded/meta-oe\""
-      echo "BBLAYERS_append = \" ../../meta-openembedded/meta-python\""
-      echo "BBLAYERS_append = \" ../../meta-openembedded/meta-networking\""
-      echo "BBLAYERS_append = \" ../../meta-openembedded/meta-filesystems\""
-      echo "BBLAYERS_append = \" ../../meta-virtualization\""
+      echo "BBLAYERS_append = \" $work_dir/meta-openembedded/meta-oe\""
+      echo "BBLAYERS_append = \" $work_dir/meta-openembedded/meta-python\""
+      echo "BBLAYERS_append = \" $work_dir/meta-openembedded/meta-networking\""
+      echo "BBLAYERS_append = \" $work_dir/meta-openembedded/meta-filesystems\""
+      echo "BBLAYERS_append = \" $work_dir/meta-virtualization\""
       echo "BBLAYERS_append = \" $top_dir/meta-misc\""
       echo ""
     } >> conf/bblayers.conf
@@ -164,7 +165,7 @@ EXTRA_IMAGE_FEATURES_append = " tools-debug dbg-pkgs"
 TOOLCHAIN_TARGET_TASK_append = " kernel-devsrc"
 
 #40 Gbytes of extra space with the line:
-IMAGE_ROOTFS_EXTRA_SPACE = "41943040"
+#IMAGE_ROOTFS_EXTRA_SPACE = "41943040"
 
 DISTRO_FEATURES_append = " virtualization"
 
@@ -210,21 +211,22 @@ IMAGE_INSTALL_append = " make"
 IMAGE_INSTALL_append = " packagegroup-core-buildessential"
 EOS
 
+  pwd
   cd $top_dir
 }
 
 build()
 {
-    cd $build_dir/poky
-    . ./oe-init-build-env
+    cd $work_dir
+    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
     bitbake $image
     cd $top_dir
 }
 
 debug()
 {
-    cd $build_dir/poky
-    . ./oe-init-build-env
+    cd $work_dir
+    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
     bitbake -c clean systemtap-native
     bitbake systemtap-native
     cd $top_dir
@@ -244,12 +246,12 @@ disk()
 
 run()
 {
-    cd $build_dir/poky/
+    cd $work_dir
 
     params="-m 4096"
     params="$params -smp 4"
 
-    . ./oe-init-build-env
+    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
 
     params="$params -device virtio-blk-device,drive=disk1"
     params="$params -drive id=disk1,file=$disk1,if=none,format=raw"
@@ -267,24 +269,24 @@ run()
 
 show_images()
 {
-    cd $build_dir/poky
-    . ./oe-init-build-env > /dev/null 2>&1
+    cd $work_dir
+    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
     bitbake-layers show-recipes | grep 'core-image-'
     cd $top_dir
 }
 
 show_recipes()
 {
-    cd $build_dir/poky
-    . ./oe-init-build-env > /dev/null 2>&1
+    cd $work_dir
+    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
     bitbake-layers show-recipes
     cd $top_dir
 }
 
 show_layers()
 {
-    cd $build_dir/poky
-    . ./oe-init-build-env > /dev/null 2>&1
+    cd $work_dir
+    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
     bitbake-layers show-layers
     cd $top_dir
 }
@@ -292,7 +294,7 @@ show_layers()
 info()
 {
     echo "top_dir   : $top_dir"
-    echo "build_dir : $build_dir"
+    echo "work_dir : $work_dir"
     echo "image     : $image"
 }
 
@@ -303,24 +305,24 @@ clean()
 
 mclean()
 {
-	rm -rf $build_dir/poky/build
+	rm -rf $work_dir/$build_dir
 }
 
 sdk()
 {
-    cd $build_dir/poky
-    . ./oe-init-build-env > /dev/null 2>&1
+    cd $work_dir
+    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
     bitbake -c populate_sdk $image
     cd $top_dir
 
 	echo "generated installer:"
-	echo poky/build/tmp/deploy/sdk/poky-glibc-x86_64-core-image-base-aarch64-toolchain-2.4.4.sh
+	echo $work_dir/$build_dir/tmp/deploy/sdk/poky-glibc-x86_64-core-image-base-aarch64-toolchain-2.4.4.sh
 }
 
 sdk_ext()
 {
-    cd $build_dir/poky
-    . ./oe-init-build-env > /dev/null 2>&1
+    cd $work_dir
+    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
     bitbake -c populate_sdk_ext $image
     cd $top_dir
 
@@ -337,20 +339,22 @@ sdk_ext()
 
 default_target()
 {
-  echo "default_target called"
   target=$1
+  echo "default_target called"
 
   while [ "$#" -ne 0 ]; do
     shift
   done
     
-  cd $build_dir/poky
-  . ./oe-init-build-env > /dev/null 2>&1
-  env | sort
-  pwd
-  cmd="bitbake -c $cmd $target"
-  echo $cmd
-  $cmd
+  cd $work_dir
+  OEROOT=$work_dir/poky . ./poky/oe-init-build-env
+  if [ -z "$cmd" ]; then
+    cmd="compile"
+  fi
+
+  bitbake_cmd="bitbake -c $cmd $target"
+  echo $bitbake_cmd
+  $bitbake_cmd
   cd $top_dir
 }
 
