@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 top_dir="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 cd $top_dir
 
@@ -16,4 +18,8 @@ stap \
     -r $KERNEL_SRC \
     -e 'probe begin { log ("hello " . k) exit () } global k="world" ' \
     -m stap_hello
+
+scp stap_hello.ko 192.168.7.2:/home/root/
+
+ssh -y 192.168.7.2 staprun stap_hello.ko
 
