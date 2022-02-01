@@ -348,11 +348,13 @@ default_target()
     
   cd $work_dir
   OEROOT=$work_dir/poky . ./poky/oe-init-build-env
-  if [ -z "$cmd" ]; then
-    cmd="compile"
+  
+  opts=""
+  if [ ! -z "$cmd" ]; then
+    opts="-c $cmd"
   fi
 
-  bitbake_cmd="bitbake -c $cmd $target"
+  bitbake_cmd="bitbake $opts $target"
   echo $bitbake_cmd
   $bitbake_cmd
   cd $top_dir
