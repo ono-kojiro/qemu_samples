@@ -17,7 +17,7 @@ build_dir=build
 #image=core-image-minimal
 image=core-image-base
     
-disk1="$work_dir/disk1.ext4"
+disk1="./disk1.ext4"
 
 tools="chrpath gawk makeinfo"
 for tool in $tools; do
@@ -223,16 +223,6 @@ build()
     cd $top_dir
 }
 
-debug()
-{
-    cd $work_dir
-    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
-    bitbake -c clean systemtap-native
-    bitbake systemtap-native
-    cd $top_dir
-}
-
-
 disk()
 {
     if [ ! -e "$disk1" ]; then
@@ -358,6 +348,71 @@ default_target()
   echo $bitbake_cmd
   $bitbake_cmd
   cd $top_dir
+}
+
+debug()
+{
+  rpmdir=$top_dir/rocko/build/tmp/deploy/rpm/qemuarm64
+  rpmfiles=`find $rpmdir -name "kernel-dev*.rpm"`
+
+  echo $rpmfiles
+}
+
+
+stap()
+{
+  set -e
+  rm -rf ./sysroot
+  rm -f stap_hello.ko
+  
+  rpmdir=$top_dir/rocko/build/tmp/deploy/rpm/qemuarm64
+
+  if [ ! -e "sysroot/usr/src/kernel/Makefile" ]; then
+    mkdir -p sysroot
+    echo "mkdir sysroot"
+    cd sysroot
+      rpmfiles=`find $rpmdir -name "kernel-dev*.rpm"`
+      for rpmfile in $rpmfiles; do
+        echo "extract $rpmfile"
+        rpm2cpio $rpmfile | cpio -id
+      done
+    cd $top_dir
+
+    # suppress error, 'Kernel function symbol table missing'
+    cd sysroot/usr/src/kernel/
+    ln -sf System.map-4.12.28-yocto-standard System.map
+    cd $top_dir
+  else
+    echo "skip rpm2cpio"
+  fi
+
+  cd sysroot/usr/src/kernel
+    . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
+    export LDFLAGS=""
+    make scripts
+    make prepare
+  cd $top_dir
+
+  kernel_src=$top_dir/sysroot/usr/src/kernel
+  
+  command stap -v -a arm64 -B CROSS_COMPILE=$CROSS_COMPILE \
+    -r $kernel_src \
+    --sysroot=$top_dir/sysroot \
+    -e 'probe begin { log ("hello " . k) exit () } global k="world" ' \
+    -m stap_hello \
+    -p 4
+
+  remote=192.168.7.2
+  echo "send stap_hello.ko to remote"
+  scp -q stap_hello.ko $remote:/home/root/
+  echo "run staprun"
+  cat - << 'EOS' | ssh -y $remote sh -s
+  {
+    staprun stap_hello.ko
+    rm -f stap_hello.ko
+  }
+EOS
+
 }
 
 cmd=""
