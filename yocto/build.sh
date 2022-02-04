@@ -167,6 +167,10 @@ TOOLCHAIN_TARGET_TASK_append = " kernel-devsrc"
 #40 Gbytes of extra space with the line:
 #IMAGE_ROOTFS_EXTRA_SPACE = "41943040"
 
+# 16 Gbytes of extra space (1024*1024*16)
+IMAGE_ROOTFS_EXTRA_SPACE = "16777216"
+
+
 DISTRO_FEATURES_append = " virtualization"
 
 # LXC
@@ -180,6 +184,7 @@ IMAGE_INSTALL_append = " docker"
 IMAGE_INSTALL_append = " docker-contrib"
 
 CORE_IMAGE_EXTRA_INSTALL_append = " kernel-modules"
+CORE_IMAGE_EXTRA_INSTALL_append = " python-core python-pip"
 
 # systemd
 DISTRO_FEATURES_append = " systemd"
@@ -209,6 +214,7 @@ IMAGE_INSTALL_append = " valgrind"
 IMAGE_INSTALL_append = " systemtap"
 IMAGE_INSTALL_append = " make"
 IMAGE_INSTALL_append = " packagegroup-core-buildessential"
+
 EOS
 
   pwd
@@ -352,26 +358,35 @@ default_target()
 
 debug()
 {
-  rpmdir=$top_dir/rocko/build/tmp/deploy/rpm/qemuarm64
-  rpmfiles=`find $rpmdir -name "kernel-dev*.rpm"`
+  cd $work_dir
+  OEROOT=$work_dir/poky . ./poky/oe-init-build-env
+ 
+  bitbake -e systemtap-native
 
-  echo $rpmfiles
+  cd $top_dir
 }
 
 
-stap()
+sysroot()
 {
   set -e
   rm -rf ./sysroot
   rm -f stap_hello.ko
   
-  rpmdir=$top_dir/rocko/build/tmp/deploy/rpm/qemuarm64
+  #rpmdir=$top_dir/rocko/build/tmp/deploy/rpm/qemuarm64
+  rpmdir=$top_dir/rocko/build/tmp/deploy/rpm
 
   if [ ! -e "sysroot/usr/src/kernel/Makefile" ]; then
     mkdir -p sysroot
     echo "mkdir sysroot"
     cd sysroot
       rpmfiles=`find $rpmdir -name "kernel-dev*.rpm"`
+      for rpmfile in $rpmfiles; do
+        echo "extract $rpmfile"
+        rpm2cpio $rpmfile | cpio -id
+      done
+      
+      rpmfiles=`find $rpmdir -name "systemtap-3.1-*.rpm"`
       for rpmfile in $rpmfiles; do
         echo "extract $rpmfile"
         rpm2cpio $rpmfile | cpio -id
@@ -392,14 +407,30 @@ stap()
     make scripts
     make prepare
   cd $top_dir
+}
+
+stap()
+{
+  . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
+  . /opt/poky/2.4.4/environment-setup-x86_64-pokysdk-linux
+
+  export LDFLAGS=""
 
   kernel_src=$top_dir/sysroot/usr/src/kernel
-  
+  tmpdir=$top_dir/tmp
+
+  mkdir -p $tmpdir
+
+  #stap=`which stap`
+  #stap=`pwd`/rocko/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/image/home/kojiro/devel/qemu_samples/yocto/rocko/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/bin/stap
+
   command stap -v -a arm64 -B CROSS_COMPILE=$CROSS_COMPILE \
     -r $kernel_src \
     --sysroot=$top_dir/sysroot \
     -e 'probe begin { log ("hello " . k) exit () } global k="world" ' \
     -m stap_hello \
+    --tmpdir=$tmpdir \
+    -R $top_dir/sysroot/usr/share/systemtap/runtime \
     -p 4
 
   remote=192.168.7.2
