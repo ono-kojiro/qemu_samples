@@ -5,8 +5,8 @@ cd $top_dir
 
 #https://lukaszgemborowski.github.io/articles/minimalistic-linux-system-on-qemu-arm.html
 
-linux_url=https://cdn.kernel.org/pub/linux/kernel/v4.x/linux-4.6.3.tar.xz
-busybox_url=http://busybox.net/downloads/busybox-1.24.2.tar.bz2
+linux_url=https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.177.tar.xz
+busybox_url=https://busybox.net/downloads/busybox-1.34.1.tar.bz2
 
 archive_dir=$top_dir/archives
 work_dir=$top_dir/work
@@ -42,11 +42,19 @@ linux()
   fi
 
   cd $dirname
-  #make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE versatile_defconfig
   make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE defconfig
   make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE
   cd $top_dir
 }
+
+menuconfig()
+{
+  linux_dir=`basename -s .tar.xz $linux_url`
+  cd $work_dir/$linux_dir
+  make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE menuconfig
+  cd $top_dir
+}
+
 
 busybox()
 {
@@ -74,7 +82,7 @@ busybox()
   cd $dirname
   make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE defconfig
   sed -i.bak -e 's|# CONFIG_STATIC is not set|CONFIG_STATIC=y|' .config
-  make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE
+  make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE -j7
   make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE install
 
   cd $top_dir
@@ -116,13 +124,23 @@ EOS
   cd $top_dir
 }
 
+disk()
+{
+  rm -f $work_dir/disk1.ext4
+  mke2fs -L '' -N 0 -t ext4 $work_dir/disk1.ext4 32M
+}
+
 run()
 {
+  linux_dir=`basename -s .tar.xz $linux_url`
+  
   qemu-system-aarch64 \
     -M virt \
     -cpu cortex-a53 \
-	-kernel $work_dir/linux-4.6.3/arch/arm64/boot/Image \
+	-kernel $work_dir/$linux_dir/arch/arm64/boot/Image \
 	-initrd $work_dir/rootfs.cpio.gz \
+    -drive id=disk1,file=$work_dir/disk1.ext4,if=none,format=raw \
+    -device virtio-blk-device,drive=disk1 \
 	-nographic \
 	-append "root=/dev/mem serial=ttyAMA0"
 }
