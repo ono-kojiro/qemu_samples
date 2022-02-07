@@ -1,4 +1,4 @@
-#!/bin/sh
+#c!/bin/sh
 
 top_dir="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 cd $top_dir
@@ -147,6 +147,7 @@ config()
       echo "BBLAYERS_append = \" $work_dir/meta-openembedded/meta-filesystems\""
       echo "BBLAYERS_append = \" $work_dir/meta-virtualization\""
       echo "BBLAYERS_append = \" $top_dir/meta-misc\""
+      echo "BBLAYERS_append = \" $top_dir/meta-linux-4.14\""
       echo ""
     } >> conf/bblayers.conf
      
@@ -159,6 +160,8 @@ config()
     conf/local.conf
 
   cat - << "EOS" >> conf/local.conf
+PREFERRED_VERSION_linux-yocto = "4.14.76"
+
 EXTRA_IMAGE_FEATURES_append = " tools-profile"
 EXTRA_IMAGE_FEATURES_append = " tools-debug dbg-pkgs"
 
