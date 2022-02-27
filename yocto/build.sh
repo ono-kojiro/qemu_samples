@@ -16,6 +16,8 @@ build_dir=build
 
 #image=core-image-minimal
 image=core-image-base
+
+remote=192.168.7.2
     
 disk1="./disk1.ext4"
 
@@ -228,7 +230,9 @@ build()
 {
     cd $work_dir
     OEROOT=$work_dir/poky . ./poky/oe-init-build-env
-    bitbake $image
+    cmd="bitbake $image"
+    echo $cmd
+    $cmd
     cd $top_dir
 }
 
@@ -338,22 +342,16 @@ sdk_ext()
 
 default_target()
 {
-  target=$1
-  echo "default_target called"
-
-  while [ "$#" -ne 0 ]; do
+  arg=$1
+  cd $work_dir
+  
+  # must remove all argument before calling oe-init-build-env
+  while [ $# -ne 0 ]; do
     shift
   done
-    
-  cd $work_dir
-  OEROOT=$work_dir/poky . ./poky/oe-init-build-env
-  
-  opts=""
-  if [ ! -z "$cmd" ]; then
-    opts="-c $cmd"
-  fi
 
-  bitbake_cmd="bitbake $opts $target"
+  OEROOT=$work_dir/poky . ./poky/oe-init-build-env
+  bitbake_cmd="bitbake $opts $arg"
   echo $bitbake_cmd
   $bitbake_cmd
   cd $top_dir
@@ -362,10 +360,9 @@ default_target()
 debug()
 {
   cd $work_dir
+  echo "work_dir is $work_dir"
   OEROOT=$work_dir/poky . ./poky/oe-init-build-env
- 
   bitbake -e systemtap-native
-
   cd $top_dir
 }
 
@@ -436,7 +433,6 @@ stap()
     -R $top_dir/sysroot/usr/share/systemtap/runtime \
     -p 4
 
-  remote=192.168.7.2
   echo "send stap_hello.ko to remote"
   scp -q stap_hello.ko $remote:/home/root/
   echo "run staprun"
@@ -449,24 +445,36 @@ EOS
 
 }
 
-cmd=""
+repo()
+{
+  createrepo $work_dir/build/tmp/deploy/rpm
+}
 
-while [ "$#" -ne 0 ]; do
+vars()
+{
+  cd $work_dir
+  OEROOT=$work_dir/poky . ./poky/oe-init-build-env
+  bitbake -e
+  cd $top_dir
+
+}
+
+cmd=""
+verbose=""
+opts=""
+args=""
+
+while [ $# -ne 0 ]; do
   case "$1" in
-    -h | --help)
+    -c )
+      shift
+      opts="$opts -c $1"
       ;;
-	-v | --version)
-	  ;;
-	-l | --logfile)
-      shift	
-	  logfile=$1
-	  ;;
-    -c | --command)
-	  shift
-	  cmd=$1
-	  ;;
+    -v )
+      opts="$opts -v"
+      ;;
 	*)
-	  break
+      args="$args $1"
 	  ;;
   esac
 
@@ -475,16 +483,17 @@ while [ "$#" -ne 0 ]; do
 done
 
 
-if [ "x$@" = "x" ]; then
+if [ -z "$args" ]; then
   usage
   exit
 fi
 
-for target in "$@" ; do
-	LANG=C type $target | grep function > /dev/null 2>&1
-	if [ "$?" -eq 0 ]; then
-		$target
+for arg in $args ; do
+	LANG=C type $arg | grep 'function' > /dev/null 2>&1
+	if [ $? -eq 0 ]; then
+		$arg
 	else
-	    default_target $target
+	    default_target $arg
 	fi
 done
+
