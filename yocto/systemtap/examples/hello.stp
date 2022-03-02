@@ -1,0 +1,6 @@
+probe begin {
+  log ("hello " . k) exit ()
+}
+
+global k="world"
+
