@@ -1,0 +1,23 @@
+global t, s
+
+probe syscall.read {
+  if (execname() == "dropbear") {
+    t[tid()] = gettimeofday_ns()
+  }
+}
+
+probe syscall.read.return {
+  if (t[tid()]){
+    s <<< gettimeofday_ns() - t[tid()]
+    delete t[tid()]
+  }
+}
+
+probe end {
+  printf("ns\n")
+  print(@hist_log(s))
+}
+
+
+
+
