@@ -12,10 +12,11 @@ fi
 
 . ./config.bashrc
 
-build_dir=build
+machine="qemuarm64"
 
 #image=core-image-minimal
 image=core-image-base
+debugfs=core-image-base-${machine}-dbg.ext4
 
 remote=192.168.7.2
     
@@ -143,17 +144,16 @@ config()
     pwd
     OEROOT=$work_dir/poky . ./poky/oe-init-build-env
 
-    {
-      echo ""
-      echo "BBLAYERS_append = \" $work_dir/meta-openembedded/meta-oe\""
-      echo "BBLAYERS_append = \" $work_dir/meta-openembedded/meta-python\""
-      echo "BBLAYERS_append = \" $work_dir/meta-openembedded/meta-networking\""
-      echo "BBLAYERS_append = \" $work_dir/meta-openembedded/meta-filesystems\""
-      echo "BBLAYERS_append = \" $work_dir/meta-virtualization\""
-      echo "BBLAYERS_append = \" $top_dir/meta-misc\""
-      echo "BBLAYERS_append = \" $top_dir/meta-linux-4.14\""
-      echo ""
-    } >> conf/bblayers.conf
+  cat - << EOS >> conf/bblayers.conf
+
+BBLAYERS_append = " $work_dir/meta-openembedded/meta-oe"
+BBLAYERS_append = " $work_dir/meta-openembedded/meta-python"
+BBLAYERS_append = " $work_dir/meta-openembedded/meta-networking"
+BBLAYERS_append = " $work_dir/meta-openembedded/meta-filesystems"
+BBLAYERS_append = " $work_dir/meta-virtualization"
+BBLAYERS_append = " $top_dir/meta-misc"
+
+EOS
      
     sed -i.bak \
       -e 's|^#DL_DIR\s*?=\s*"${TOPDIR}/downloads"|DL_DIR ?= "/home/share/yocto/downloads"|' \
@@ -164,10 +164,11 @@ config()
     conf/local.conf
 
   cat - << "EOS" >> conf/local.conf
-PREFERRED_VERSION_linux-yocto = "4.14.76"
+#PREFERRED_VERSION_linux-yocto = "4.14.76"
 
 EXTRA_IMAGE_FEATURES_append = " tools-profile"
-EXTRA_IMAGE_FEATURES_append = " tools-debug dbg-pkgs"
+EXTRA_IMAGE_FEATURES_append = " tools-debug"
+#EXTRA_IMAGE_FEATURES_append = " dbg-pkgs"
 PACKAGE_DEBUG_SPLIT_STYLE   = "debug-file-directory"
 
 TOOLCHAIN_TARGET_TASK_append = " kernel-devsrc"
@@ -180,6 +181,9 @@ IMAGE_ROOTFS_EXTRA_SPACE = "16777216"
 
 
 DISTRO_FEATURES_append = " virtualization"
+
+KERNEL_EXTRA_FEATURES_append = " lxc.scc"
+KERNEL_EXTRA_FEATURES_append = " docker.scc"
 
 # LXC
 IMAGE_INSTALL_append = " lxc cgroup-lite"
@@ -222,6 +226,18 @@ IMAGE_INSTALL_append = " valgrind"
 IMAGE_INSTALL_append = " systemtap"
 IMAGE_INSTALL_append = " make"
 IMAGE_INSTALL_append = " packagegroup-core-buildessential"
+IMAGE_INSTALL_append = " coreutils"
+IMAGE_INSTALL_append = " kernel-devsrc"
+
+IMAGE_GEN_DEBUGFS = "1"
+IMAGE_FSTYPES_DEBUGFS = "tar.bz2"
+#USER_CLASSES += "image-combined-dbg"
+
+# enables kernel debug symbols
+KERNEL_EXTRA_FEATURES_append = " features/debug/debug-kernel.scc"
+
+# minimal, just run-time systemtap configuration in target image
+#PACKAGECONFIG_pn-systemtap = "monitor"
 
 EOS
 
@@ -311,7 +327,7 @@ clean()
 
 mclean()
 {
-	rm -rf $work_dir/$build_dir
+  :
 }
 
 image()
@@ -329,9 +345,6 @@ sdk()
     OEROOT=$work_dir/poky . ./poky/oe-init-build-env
     bitbake -c populate_sdk $image
     cd $top_dir
-
-	echo "generated installer:"
-	echo $work_dir/$build_dir/tmp/deploy/sdk/poky-glibc-x86_64-core-image-base-aarch64-toolchain-2.4.4.sh
 }
 
 sdk_ext()
@@ -372,9 +385,16 @@ default_target()
 debug()
 {
   cd $work_dir
-  echo "work_dir is $work_dir"
   OEROOT=$work_dir/poky . ./poky/oe-init-build-env
-  bitbake -e systemtap-native
+  which crosstap
+  #crosstap \
+  #  -i "core-image-base" \
+  #  -m "test_cross" \
+  #  test_hello.stp
+  echo "debugfs is $debugfs"
+  pwd
+  #ls -l $work_dir/build
+  ls build
   cd $top_dir
 }
 
