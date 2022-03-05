@@ -1,4 +1,4 @@
-#c!/bin/sh
+#!/bin/sh
 
 top_dir="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 cd $top_dir
@@ -31,6 +31,8 @@ for tool in $tools; do
     exit 1
   fi
 done
+
+release="4.14.76-yocto-standard"
 
 help()
 {
@@ -166,6 +168,7 @@ PREFERRED_VERSION_linux-yocto = "4.14.76"
 
 EXTRA_IMAGE_FEATURES_append = " tools-profile"
 EXTRA_IMAGE_FEATURES_append = " tools-debug dbg-pkgs"
+PACKAGE_DEBUG_SPLIT_STYLE   = "debug-file-directory"
 
 TOOLCHAIN_TARGET_TASK_append = " kernel-devsrc"
 
@@ -226,7 +229,7 @@ EOS
   cd $top_dir
 }
 
-build()
+image()
 {
     cd $work_dir
     OEROOT=$work_dir/poky . ./poky/oe-init-build-env
@@ -311,6 +314,15 @@ mclean()
 	rm -rf $work_dir/$build_dir
 }
 
+image()
+{
+    cd $work_dir
+    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
+    bitbake $opts $image
+    cd $top_dir
+}
+
+
 sdk()
 {
     cd $work_dir
@@ -343,12 +355,12 @@ sdk_ext()
 default_target()
 {
   arg=$1
-  cd $work_dir
-  
   # must remove all argument before calling oe-init-build-env
   while [ $# -ne 0 ]; do
     shift
   done
+  
+  cd $work_dir
 
   OEROOT=$work_dir/poky . ./poky/oe-init-build-env
   bitbake_cmd="bitbake $opts $arg"
@@ -395,7 +407,7 @@ sysroot()
 
     # suppress error, 'Kernel function symbol table missing'
     cd sysroot/usr/src/kernel/
-    ln -sf System.map-4.12.28-yocto-standard System.map
+    ln -sf System.map-${release} System.map
     cd $top_dir
   else
     echo "skip rpm2cpio"
@@ -412,7 +424,7 @@ sysroot()
 stap()
 {
   . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
-  . /opt/poky/2.4.4/environment-setup-x86_64-pokysdk-linux
+  #. /opt/poky/2.4.4/environment-setup-x86_64-pokysdk-linux
 
   export LDFLAGS=""
 
@@ -430,7 +442,6 @@ stap()
     -e 'probe begin { log ("hello " . k) exit () } global k="world" ' \
     -m stap_hello \
     --tmpdir=$tmpdir \
-    -R $top_dir/sysroot/usr/share/systemtap/runtime \
     -p 4
 
   echo "send stap_hello.ko to remote"
