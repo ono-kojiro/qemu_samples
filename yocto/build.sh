@@ -3,14 +3,8 @@
 top_dir="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 cd $top_dir
 
-if [ ! -e ./config.bashrc ]; then
-    echo "ERROR : no config.bashrc in $top_dir"
-    echo "Please create $top_dir/config.bashrc"
-    echo "and define work_dir variable."
-    exit 1
-fi
-
-. ./config.bashrc
+work_dir="${top_dir}/work"
+src_dir="${top_dir}/rocko"
 
 machine="qemuarm64"
 
@@ -20,7 +14,7 @@ debugfs=core-image-base-${machine}-dbg.ext4
 
 remote=192.168.7.2
     
-disk1="./disk1.ext4"
+disk1="${top_dir}/disk1.ext4"
 
 tools="chrpath gawk makeinfo"
 for tool in $tools; do
@@ -140,17 +134,18 @@ config()
     echo $cmd
     $cmd
 
+    mkdir -p $work_dir
     cd $work_dir
     pwd
-    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
+    OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
 
   cat - << EOS >> conf/bblayers.conf
 
-BBLAYERS_append = " $work_dir/meta-openembedded/meta-oe"
-BBLAYERS_append = " $work_dir/meta-openembedded/meta-python"
-BBLAYERS_append = " $work_dir/meta-openembedded/meta-networking"
-BBLAYERS_append = " $work_dir/meta-openembedded/meta-filesystems"
-BBLAYERS_append = " $work_dir/meta-virtualization"
+BBLAYERS_append = " $src_dir/meta-openembedded/meta-oe"
+BBLAYERS_append = " $src_dir/meta-openembedded/meta-python"
+BBLAYERS_append = " $src_dir/meta-openembedded/meta-networking"
+BBLAYERS_append = " $src_dir/meta-openembedded/meta-filesystems"
+BBLAYERS_append = " $src_dir/meta-virtualization"
 BBLAYERS_append = " $top_dir/meta-misc"
 
 EOS
@@ -230,6 +225,7 @@ IMAGE_INSTALL_append = " coreutils"
 IMAGE_INSTALL_append = " kernel-devsrc"
 
 IMAGE_GEN_DEBUGFS = "1"
+IMAGE_FSTYPES = "ext4 tar.bz2"
 IMAGE_FSTYPES_DEBUGFS = "tar.bz2"
 #USER_CLASSES += "image-combined-dbg"
 
@@ -241,52 +237,50 @@ KERNEL_EXTRA_FEATURES_append = " features/debug/debug-kernel.scc"
 
 EOS
 
-  pwd
   cd $top_dir
 }
 
 image()
 {
-    cd $work_dir
-    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
-    cmd="bitbake $image"
-    echo $cmd
-    $cmd
-    cd $top_dir
+  cd ${work_dir}
+  OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
+  cmd="bitbake ${image}"
+  echo $cmd
+  $cmd
+  cd ${top_dir}
 }
 
 disk()
 {
-    if [ ! -e "$disk1" ]; then
-      cmd="dd if=/dev/zero of=$disk1 bs=1024K count=65536"
-      echo $cmd
-      $cmd
-    else
-      echo "skip $disk1"
-    fi
+  if [ ! -e "$disk1" ]; then
+    cmd="dd if=/dev/zero of=$disk1 bs=1024K count=65536"
+    echo $cmd
+    $cmd
+  else
+    echo "skip $disk1"
+  fi
 }
 
 run()
 {
-    cd $work_dir
+  cd ${work_dir}
+  OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
+  
+  params="-m 4096"
+  params="$params -smp 4"
 
-    params="-m 4096"
-    params="$params -smp 4"
+  params="$params -device virtio-blk-device,drive=disk1"
+  params="$params -drive id=disk1,file=$disk1,if=none,format=raw"
 
-    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
+  bootparams=""
+  bootparams="$bootparams root=/dev/vdb"
 
-    params="$params -device virtio-blk-device,drive=disk1"
-    params="$params -drive id=disk1,file=$disk1,if=none,format=raw"
+  disk
 
-    bootparams=""
-    bootparams="$bootparams root=/dev/vdb"
-
-	disk
-
-    runqemu nographic qemuarm64 \
-      qemuparams="$params" bootparams="$bootparams" \
-      $image
-    cd $top_dir
+  runqemu nographic ${machine} \
+    qemuparams="$params" bootparams="$bootparams" \
+    $image
+  cd $top_dir
 }
 
 show_images()
@@ -329,15 +323,6 @@ mclean()
 {
   :
 }
-
-image()
-{
-    cd $work_dir
-    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
-    bitbake $opts $image
-    cd $top_dir
-}
-
 
 sdk()
 {
