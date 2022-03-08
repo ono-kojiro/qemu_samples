@@ -141,7 +141,6 @@ config()
     OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
 
   cat - << EOS >> conf/bblayers.conf
-
 BBLAYERS_append = " $src_dir/meta-openembedded/meta-oe"
 BBLAYERS_append = " $src_dir/meta-openembedded/meta-python"
 BBLAYERS_append = " $src_dir/meta-openembedded/meta-networking"
@@ -160,44 +159,12 @@ EOS
     conf/local.conf
 
   cat - << "EOS" >> conf/local.conf
-#PREFERRED_VERSION_linux-yocto = "4.14.76"
-
-EXTRA_IMAGE_FEATURES_append = " tools-profile"
-EXTRA_IMAGE_FEATURES_append = " tools-debug"
 EXTRA_IMAGE_FEATURES_append = " dbg-pkgs"
-
-#PACKAGE_DEBUG_SPLIT_STYLE   = "debug-file-directory"
 PACKAGE_DEBUG_SPLIT_STYLE   = "debug-file-directory"
-
 TOOLCHAIN_TARGET_TASK_append = " kernel-devsrc"
-
-#40 Gbytes of extra space with the line:
-#IMAGE_ROOTFS_EXTRA_SPACE = "41943040"
 
 # 4GB of extra space (1024*1024*4)
 IMAGE_ROOTFS_EXTRA_SPACE = "4194304"
-
-# 16GB of extra space (1024*1024*16)
-#IMAGE_ROOTFS_EXTRA_SPACE = "16777216"
-
-
-DISTRO_FEATURES_append = " virtualization"
-
-KERNEL_EXTRA_FEATURES_append = " lxc.scc"
-KERNEL_EXTRA_FEATURES_append = " docker.scc"
-
-# LXC
-IMAGE_INSTALL_append = " lxc cgroup-lite"
-IMAGE_INSTALL_append = " dropbear"
-IMAGE_INSTALL_append = " gnupg"
-IMAGE_INSTALL_append = " nfs-utils"
-
-# Docker
-IMAGE_INSTALL_append = " docker"
-IMAGE_INSTALL_append = " docker-contrib"
-
-CORE_IMAGE_EXTRA_INSTALL_append = " kernel-modules"
-CORE_IMAGE_EXTRA_INSTALL_append = " python-core python-pip"
 
 # systemd
 DISTRO_FEATURES_append = " systemd"
@@ -209,26 +176,12 @@ SERIAL_CONSOLES_CHECK = "${SERIAL_CONSOLES}"
 IMAGE_FEATURES += " package-management"
 PACKAGE_CLASSES ?= " package_rpm"
 
-IMAGE_INSTALL_append = " stress"
-IMAGE_INSTALL_append = " htop"
+IMAGE_INSTALL_append = " dropbear"
 
-IMAGE_INSTALL_append = " python3-pip"
-IMAGE_INSTALL_append = " python3-flask"
-IMAGE_INSTALL_append = " fio"
-IMAGE_INSTALL_append = " iperf3"
-IMAGE_INSTALL_append = " gdb"
-
-IMAGE_INSTALL_append = " e2fsprogs"
-
-IMAGE_INSTALL_append = " oprofile"
-IMAGE_INSTALL_append = " strace"
-IMAGE_INSTALL_append = " valgrind"
 
 IMAGE_INSTALL_append = " systemtap"
-IMAGE_INSTALL_append = " make"
 IMAGE_INSTALL_append = " packagegroup-core-buildessential"
 IMAGE_INSTALL_append = " coreutils"
-IMAGE_INSTALL_append = " kernel-devsrc"
 
 IMAGE_GEN_DEBUGFS = "1"
 IMAGE_FSTYPES = "ext4 tar.bz2"
@@ -242,7 +195,6 @@ KERNEL_EXTRA_FEATURES_append = " features/debug/debug-kernel.scc"
 #PACKAGECONFIG_pn-systemtap = "monitor"
 
 EOS
-
   cd $top_dir
 }
 
@@ -380,6 +332,32 @@ default_target()
   cd $top_dir
 }
 
+extract_debug()
+{
+  imagedir=${work_dir}/build/tmp/deploy/images
+  
+  imagetar="${imagedir}/${machine}/${image}-${machine}.tar.bz2"
+  tar -C $sysroot -xjf $imagetar
+  
+  dbgtar="${imagedir}/${machine}/${image}-${machine}-dbg.tar.bz2"
+  tar -C $sysroot -xjf $dbgtar
+  
+  cd $top_dir
+}
+
+extract_vmlinux()
+{
+  rpmdir="${work_dir}/build/tmp/deploy/rpm/${machine}"
+  rpmfiles=`find $rpmdir -name "kernel-vmlinux*.rpm"`
+
+  for rpmfile in $rpmfiles; do
+    echo "extract $rpmfile"
+    rpm2cpio $rpmfile | cpio -id -D $sysroot
+  done
+
+}
+
+
 sysroot()
 {
   cd ${work_dir}
@@ -409,28 +387,9 @@ sysroot()
   make scripts
   make prepare
   cd $top_dir
-}
 
-debug()
-{
-  imagedir=${work_dir}/build/tmp/deploy/images
-  dbgtar="${imagedir}/${machine}/${image}-${machine}-dbg.tar.bz2"
-  tar -C $sysroot -xjf $dbgtar
-  #tar -tjvf $dbgtar
-
-  cd $top_dir
-}
-
-vmlinux()
-{
-  rpmdir="${work_dir}/build/tmp/deploy/rpm/${machine}"
-  rpmfiles=`find $rpmdir -name "kernel-vmlinux*.rpm"`
-
-  for rpmfile in $rpmfiles; do
-    echo "extract $rpmfile"
-    rpm2cpio $rpmfile | cpio -id -D $sysroot
-  done
-
+  extract_debug
+  extract_vmlinux
 }
 
 
@@ -455,15 +414,15 @@ stap_hello()
     --tmpdir=$tmpdir \
     -p 4
 
-  echo "send stap_hello.ko to remote"
-  scp -q stap_hello.ko $remote:/home/root/
-  echo "run staprun"
-  cat - << 'EOS' | ssh -y $remote sh -s
-  {
-    staprun stap_hello.ko
-    rm -f stap_hello.ko
-  }
-EOS
+  #echo "send stap_hello.ko to remote"
+  #scp -q stap_hello.ko $remote:/home/root/
+  #echo "run staprun"
+  #cat - << 'EOS' | ssh -y $remote sh -s
+  #{
+  #  staprun stap_hello.ko
+  #  rm -f stap_hello.ko
+  #}
+#EOS
 
   cd $top_dir
 }
@@ -479,10 +438,11 @@ stap_kernel()
   tmpdir=$work_dir/tmp
 
   mkdir -p $tmpdir
+    
+    #-r $kernel_src \
 
   cd $work_dir
   command stap -v -a arm64 -B CROSS_COMPILE=$CROSS_COMPILE \
-    -r $kernel_src \
     --sysroot=$sysroot \
     -m test_kernel \
     --tmpdir=$tmpdir \
@@ -491,6 +451,24 @@ stap_kernel()
 
   cd $top_dir
 }
+
+debug()
+{
+  cd ${work_dir}
+  OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
+
+  cd ${work_dir}
+  #ok
+  #crosstap root@yocto ../test_kernel.stp -p 4 -v
+  
+  #ok
+  #crosstap root@yocto ../test_key.stp -p 4 -v
+  
+  # compile error
+  # crosstap root@yocto ../cycle_thief.stp -p 4 -v
+  cd ${top_dir}
+}
+
 
 repo()
 {
