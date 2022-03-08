@@ -1,0 +1,14 @@
+probe kernel.function("kbd_event") {
+  printf("kbd_event\n");
+}
+
+probe begin {
+  printf("begin\n")
+  exit()
+}
+
+probe end {                                
+  printf("\nend\n")
+}
+
+
