@@ -123,12 +123,6 @@ checkout()
     cd $top_dir
 }
 
-ls()
-{
-  command ls -l $work_dir
-}
-
-
 config()
 {
     cmd="rm -rf $work_dir/build/conf"
@@ -334,6 +328,7 @@ default_target()
 
 extract_debug()
 {
+  cd $top_dir
   imagedir=${work_dir}/build/tmp/deploy/images
   
   imagetar="${imagedir}/${machine}/${image}-${machine}.tar.bz2"
@@ -347,6 +342,7 @@ extract_debug()
 
 extract_vmlinux()
 {
+  cd $top_dir
   rpmdir="${work_dir}/build/tmp/deploy/rpm/${machine}"
   rpmfiles=`find $rpmdir -name "kernel-vmlinux*.rpm"`
 
@@ -357,19 +353,14 @@ extract_vmlinux()
 
 }
 
-
 sysroot()
 {
-  cd ${work_dir}
-  
-  #OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
   . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
   export LDFLAGS=""
 
   cd ${work_dir}
   rm -rf ${sysroot}
   
-  #rpmdir=$top_dir/rocko/build/tmp/deploy/rpm/qemuarm64
   rpmdir=${work_dir}/build/tmp/deploy/rpm
   
   rpmfiles=`find $rpmdir -name "kernel-devsrc*.rpm"`
@@ -386,12 +377,13 @@ sysroot()
   #export LDFLAGS=""
   make scripts
   make prepare
-  cd $top_dir
 
   extract_debug
   extract_vmlinux
+  
+  cd $sysroot/usr/src/kernel/
+  ln -s ../../../boot/vmlinux-4.12.28-yocto-standard vmlinux
 }
-
 
 stap_hello()
 {
@@ -427,39 +419,38 @@ stap_hello()
   cd $top_dir
 }
 
-stap_kernel()
+stap()
 {
   . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
-  #. /opt/poky/2.4.4/environment-setup-x86_64-pokysdk-linux
-
   export LDFLAGS=""
 
   kernel_src=$sysroot/usr/src/kernel
   tmpdir=$work_dir/tmp
 
   mkdir -p $tmpdir
-    
-    #-r $kernel_src \
 
-  cd $work_dir
-  command stap -v -a arm64 -B CROSS_COMPILE=$CROSS_COMPILE \
+  command stap \
+    -v \
+    -a arm64 \
+    -B CROSS_COMPILE=$CROSS_COMPILE \
     --sysroot=$sysroot \
+    -r $kernel_src \
     -m test_kernel \
     --tmpdir=$tmpdir \
     -p 4 \
-    ../test_kernel.stp
+    test_kernel.stp
 
   cd $top_dir
 }
 
-debug()
+crosstap()
 {
   cd ${work_dir}
   OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
 
   cd ${work_dir}
   #ok
-  #crosstap root@yocto ../test_kernel.stp -p 4 -v
+  command crosstap root@yocto ../test_kernel.stp -p 4 -v
   
   #ok
   #crosstap root@yocto ../test_key.stp -p 4 -v
@@ -469,6 +460,59 @@ debug()
   cd ${top_dir}
 }
 
+staprun()
+{
+  cd ${work_dir}
+  scp -q test_kernel.ko $remote:/home/root/
+  ssh -y $remote staprun -v test_kernel.ko
+  cd ${top_dir}
+}
+
+debug()
+{
+  . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
+  export LDFLAGS=""
+
+  #script="${src_dir}/poky/scripts/crosstap"
+  #file $script
+
+  stap="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/bin/stap"
+
+  arch="arm64"
+  
+  # ok
+  builddir="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/linux-qemuarm64-standard-build"
+  echo "OK"
+  echo "BuildDir : $builddir"
+  du -sh $builddir
+  ls $builddir
+  echo "" 
+  
+  # ng
+  builddir="$work_dir/sysroot/usr/src/kernel"
+  echo "" 
+  echo "NOT OK"
+  echo "BuildDir : $builddir"
+  du -sh $builddir
+  ls $builddir
+  echo "" 
+ 
+
+  tapset_dir="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/tapset"
+
+  runtime_dir="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/runtime"
+
+  $stap -a $arch \
+    -B CROSS_COMPILE=aarch64-poky-linux- \
+    -r $builddir \
+    -I $tapset_dir \
+    -R $runtime_dir \
+    -p 4 \
+    -m hoge \
+    test_kernel.stp
+
+  which stap
+}
 
 repo()
 {
