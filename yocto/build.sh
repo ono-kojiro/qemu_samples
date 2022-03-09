@@ -423,6 +423,13 @@ stap_hello()
 
 stap()
 {
+  #cd ${work_dir}
+  #OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
+  #cd ${top_dir}
+
+  stap="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/bin/stap"
+  #stap="/usr/bin/stap"
+
   . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
   export LDFLAGS=""
 
@@ -437,29 +444,36 @@ stap()
     options="$options -r $sysroot/usr/src/kernel"
     options="$options --sysroot=$sysroot"
   else
-    sysroot="${work_dir}/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native"
-    options="$options --sysroot=$sysroot"
+    sysroot="${work_dir}/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native"
+    #options="$options --sysroot=$sysroot"
     options="$options -r $work_dir/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/linux-qemuarm64-standard-build"
 
-    options="-I $work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/tapset"
+    options="$options -I $work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/tapset"
     options="$options -R $work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/runtime"
+    runtime_dir="$work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/runtime"
+    if [ ! -d "$runtime_dir" ]; then
+      echo "no such directory"
+      exit 1
+    fi
   fi
-
-
 
   tmpdir=$work_dir/tmp
 
   mkdir -p $tmpdir
+  CROSS_COMPILE="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/recipe-sysroot-native/usr/bin/aarch64-poky-linux/aarch64-poky-linux-"
 
-  command stap \
-    -v \
-    -a arm64 \
-    -B CROSS_COMPILE=$CROSS_COMPILE \
-    $options \
-    -m test_kernel \
-    --tmpdir=$tmpdir \
-    -p 4 \
-    test_kernel.stp
+  cmd="$stap"
+  cmd="$cmd -v -a arm64"
+  cmd="$cmd -B CROSS_COMPILE=$CROSS_COMPILE"
+  cmd="$cmd $options"
+  cmd="$cmd -m test_kernel"
+  cmd="$cmd --tmpdir=$tmpdir"
+  cmd="$cmd -p 4"
+  cmd="$cmd test_kernel.stp"
+  echo $cmd
+  command $cmd
+
+  $stap --version
 
   cd $top_dir
 }
@@ -557,7 +571,6 @@ vars()
 
 }
 
-cmd=""
 verbose=""
 opts=""
 args=""
