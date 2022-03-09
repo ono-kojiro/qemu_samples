@@ -188,6 +188,8 @@ KERNEL_EXTRA_FEATURES_append = " features/debug/debug-kernel.scc"
 # minimal, just run-time systemtap configuration in target image
 #PACKAGECONFIG_pn-systemtap = "monitor"
 
+CORE_IMAGE_EXTRA_INSTALL_append = " kernel-modules"
+
 EOS
   cd $top_dir
 }
@@ -424,7 +426,27 @@ stap()
   . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
   export LDFLAGS=""
 
-  kernel_src=$sysroot/usr/src/kernel
+  options=""
+
+  #use_rpm=1
+  use_rpm=0
+
+  if [ "$use_rpm" -ne 0 ]; then
+    sysroot="${work_dir}/sysroot"
+
+    options="$options -r $sysroot/usr/src/kernel"
+    options="$options --sysroot=$sysroot"
+  else
+    sysroot="${work_dir}/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native"
+    options="$options --sysroot=$sysroot"
+    options="$options -r $work_dir/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/linux-qemuarm64-standard-build"
+
+    options="-I $work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/tapset"
+    options="$options -R $work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/runtime"
+  fi
+
+
+
   tmpdir=$work_dir/tmp
 
   mkdir -p $tmpdir
@@ -433,8 +455,7 @@ stap()
     -v \
     -a arm64 \
     -B CROSS_COMPILE=$CROSS_COMPILE \
-    --sysroot=$sysroot \
-    -r $kernel_src \
+    $options \
     -m test_kernel \
     --tmpdir=$tmpdir \
     -p 4 \
@@ -448,9 +469,9 @@ crosstap()
   cd ${work_dir}
   OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
 
-  cd ${work_dir}
+  cd ${top_dir}
   #ok
-  command crosstap root@yocto ../test_kernel.stp -p 4 -v
+  command crosstap root@yocto test_kernel.stp -p 4 -v -m test_kernel_crosstap
   
   #ok
   #crosstap root@yocto ../test_key.stp -p 4 -v
@@ -458,6 +479,14 @@ crosstap()
   # compile error
   # crosstap root@yocto ../cycle_thief.stp -p 4 -v
   cd ${top_dir}
+}
+
+crosstaprun()
+{
+  cd ${top_dir}
+  scp -q test_kernel_crosstap.ko $remote:/home/root/
+  ssh -y $remote staprun -v test_kernel_crosstap.ko
+
 }
 
 staprun()
