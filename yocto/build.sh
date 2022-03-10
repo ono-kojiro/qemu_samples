@@ -449,8 +449,8 @@ stap()
     options="$options -r $work_dir/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/linux-qemuarm64-standard-build"
 
     options="$options -I $work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/tapset"
-    options="$options -R $work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/runtime"
     runtime_dir="$work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/runtime"
+    options="$options -R $runtime_dir"
     if [ ! -d "$runtime_dir" ]; then
       echo "no such directory"
       exit 1
@@ -478,6 +478,15 @@ stap()
   cd $top_dir
 }
 
+staprun()
+{
+  cd ${top_dir}
+  scp -q test_kernel.ko $remote:/home/root/
+  ssh -y $remote staprun -v test_kernel.ko
+  cd ${top_dir}
+}
+
+
 crosstap()
 {
   cd ${work_dir}
@@ -501,14 +510,6 @@ crosstaprun()
   scp -q test_kernel_crosstap.ko $remote:/home/root/
   ssh -y $remote staprun -v test_kernel_crosstap.ko
 
-}
-
-staprun()
-{
-  cd ${work_dir}
-  scp -q test_kernel.ko $remote:/home/root/
-  ssh -y $remote staprun -v test_kernel.ko
-  cd ${top_dir}
 }
 
 debug()
