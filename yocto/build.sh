@@ -427,7 +427,7 @@ stap()
   #OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
   #cd ${top_dir}
 
-  stap="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/bin/stap"
+  stap="$HOME/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/bin/stap"
   #stap="/usr/bin/stap"
 
   . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
@@ -460,7 +460,7 @@ stap()
   tmpdir=$work_dir/tmp
 
   mkdir -p $tmpdir
-  CROSS_COMPILE="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/recipe-sysroot-native/usr/bin/aarch64-poky-linux/aarch64-poky-linux-"
+  CROSS_COMPILE="$HOME/devel/qemu_samples/yocto/work/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/recipe-sysroot-native/usr/bin/aarch64-poky-linux/aarch64-poky-linux-"
 
   cmd="$stap"
   cmd="$cmd -v -a arm64"
@@ -519,12 +519,12 @@ debug()
   #script="${src_dir}/poky/scripts/crosstap"
   #file $script
 
-  stap="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/bin/stap"
+  stap="$HOME/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/bin/stap"
 
   arch="arm64"
   
   # ok
-  builddir="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/linux-qemuarm64-standard-build"
+  builddir="$HOME/devel/qemu_samples/yocto/work/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/linux-qemuarm64-standard-build"
   echo "OK"
   echo "BuildDir : $builddir"
   du -sh $builddir
@@ -541,9 +541,9 @@ debug()
   echo "" 
  
 
-  tapset_dir="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/tapset"
+  tapset_dir="$HOME/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/tapset"
 
-  runtime_dir="/home/kojiro/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/runtime"
+  runtime_dir="$HOME/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/runtime"
 
   $stap -a $arch \
     -B CROSS_COMPILE=aarch64-poky-linux- \
