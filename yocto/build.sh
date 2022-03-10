@@ -427,7 +427,6 @@ stap()
   #OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
   #cd ${top_dir}
 
-  stap="$HOME/devel/qemu_samples/yocto/work/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/bin/stap"
   #stap="/usr/bin/stap"
 
   . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
@@ -444,17 +443,15 @@ stap()
     options="$options -r $sysroot/usr/src/kernel"
     options="$options --sysroot=$sysroot"
   else
-    sysroot="${work_dir}/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native"
-    #options="$options --sysroot=$sysroot"
+    systemtap_native="${work_dir}/build/tmp/work/x86_64-linux/systemtap-native"
+    sysroot_native="${systemtap_native}/3.1-r0/recipe-sysroot-native"
+  
+    stap="$sysroot_native/usr/bin/stap"
+    
     options="$options -r $work_dir/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/linux-qemuarm64-standard-build"
 
-    options="$options -I $work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/tapset"
-    runtime_dir="$work_dir/build/tmp/work/x86_64-linux/systemtap-native/3.1-r0/recipe-sysroot-native/usr/share/systemtap/runtime"
-    options="$options -R $runtime_dir"
-    if [ ! -d "$runtime_dir" ]; then
-      echo "no such directory"
-      exit 1
-    fi
+    options="$options -I $sysroot_native/usr/share/systemtap/tapset"
+    options="$options -R $sysroot_native/usr/share/systemtap/runtime"
   fi
 
   tmpdir=$work_dir/tmp
