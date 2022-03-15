@@ -155,7 +155,7 @@ EOS
   cat - << "EOS" >> conf/local.conf
 EXTRA_IMAGE_FEATURES_append = " dbg-pkgs"
 PACKAGE_DEBUG_SPLIT_STYLE   = "debug-file-directory"
-TOOLCHAIN_TARGET_TASK_append = " kernel-devsrc"
+#TOOLCHAIN_TARGET_TASK_append = " kernel-devsrc"
 
 # 4GB of extra space (1024*1024*4)
 IMAGE_ROOTFS_EXTRA_SPACE = "4194304"
@@ -427,7 +427,6 @@ stap()
   #OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
   #cd ${top_dir}
 
-  #stap="/usr/bin/stap"
 
   . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
   export LDFLAGS=""
@@ -446,6 +445,7 @@ stap()
     systemtap_native="${work_dir}/build/tmp/work/x86_64-linux/systemtap-native"
     sysroot_native="${systemtap_native}/3.1-r0/recipe-sysroot-native"
   
+    #stap="/usr/bin/stap"
     stap="$sysroot_native/usr/bin/stap"
     
     options="$options -r $work_dir/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/linux-qemuarm64-standard-build"
