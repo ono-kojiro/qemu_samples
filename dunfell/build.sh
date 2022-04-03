@@ -249,19 +249,11 @@ esdk()
 default_target()
 {
   arg=$1; shift
-
-  case $arg in
-    * )
-      cd ${work_dir}
-      OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
   
-      bitbake_cmd="bitbake $opts $arg"
-      echo $bitbake_cmd
-      $bitbake_cmd
-      ;;
-  esac
-
-  cd $top_dir
+  cd ${src_dir}/poky
+  BDIR=${work_dir}/build . ./oe-init-build-env
+  bitbake $arg
+  cd ${top_dir}
 }
 
 opts=""
@@ -292,11 +284,12 @@ if [ -z "$args" ]; then
 fi
 
 for arg in $args ; do
-	LANG=C type $arg | grep 'function' > /dev/null 2>&1
-	if [ $? -eq 0 ]; then
-		$arg
-	else
-	    default_target $arg
-	fi
+  echo "check $arg"
+  LANG=C type $arg | grep 'function'
+  if [ $? -eq 0 ]; then
+    $arg
+  else
+    default_target $arg
+  fi
 done
 
