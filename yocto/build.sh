@@ -4,12 +4,12 @@ top_dir="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 cd $top_dir
 
 work_dir="${top_dir}/work"
-src_dir="${top_dir}/rocko"
+src_dir="${top_dir}/sources"
 
 machine="qemuarm64"
 
-#image=core-image-minimal
-image=core-image-base
+image=core-image-minimal
+#image=core-image-base
 
 remote=192.168.7.2
 
@@ -93,9 +93,9 @@ clone()
 
 checkout()
 {
-    cd $work_dir
+    cd ${src_dir}
 	branch="rocko"
-
+    pwd
     if [ ! -d meta-openembedded ]; then
         echo ERROR : no meta-openembedded directory
     else
@@ -154,11 +154,16 @@ EOS
 
   cat - << "EOS" >> conf/local.conf
 EXTRA_IMAGE_FEATURES_append = " dbg-pkgs"
+EXTRA_IMAGE_FEATURES_append = " tools-profile"
+
 PACKAGE_DEBUG_SPLIT_STYLE   = "debug-file-directory"
 #TOOLCHAIN_TARGET_TASK_append = " kernel-devsrc"
 
 # 4GB of extra space (1024*1024*4)
 IMAGE_ROOTFS_EXTRA_SPACE = "4194304"
+
+# enable virtualization for docker and lxc
+DISTRO_FEATURES_append = " virtualization"
 
 # systemd
 DISTRO_FEATURES_append = " systemd"
@@ -176,6 +181,9 @@ IMAGE_INSTALL_append = " dropbear"
 IMAGE_INSTALL_append = " systemtap"
 IMAGE_INSTALL_append = " packagegroup-core-buildessential"
 IMAGE_INSTALL_append = " coreutils"
+
+IMAGE_INSTALL_append = " lxc cgroup-lite"
+IMAGE_INSTALL_append = " docker docker-contrib"
 
 IMAGE_GEN_DEBUGFS = "1"
 IMAGE_FSTYPES = "ext4 tar.bz2"
@@ -361,14 +369,18 @@ sysroot()
   export LDFLAGS=""
 
   cd ${work_dir}
+  echo "remove ${sysroot}"
   rm -rf ${sysroot}
   
   rpmdir=${work_dir}/build/tmp/deploy/rpm
   
   rpmfiles=`find $rpmdir -name "kernel-devsrc*.rpm"`
   for rpmfile in $rpmfiles; do
+    echo "extract $rpmfile"
     rpm2cpio $rpmfile | cpio -id -D $sysroot
+    echo "done"
   done
+
   
   cd $sysroot/usr/src/kernel/
   ln -sf System.map-${release} System.map
@@ -380,8 +392,13 @@ sysroot()
   make scripts
   make prepare
 
-  extract_debug
-  extract_vmlinux
+  #echo "extract debug"
+  #extract_debug
+  #echo "done"
+
+  #echo "extract vmlinux"
+  #extract_vmlinux
+  #echo "done"
   
   cd $sysroot/usr/src/kernel/
   ln -s ../../../boot/vmlinux-4.12.28-yocto-standard vmlinux
@@ -426,7 +443,6 @@ stap()
   #cd ${work_dir}
   #OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
   #cd ${top_dir}
-
 
   . /opt/poky/2.4.4/environment-setup-aarch64-poky-linux
   export LDFLAGS=""
