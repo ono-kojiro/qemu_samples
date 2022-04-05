@@ -399,9 +399,10 @@ sysroot()
   #echo "extract vmlinux"
   #extract_vmlinux
   #echo "done"
-  
-  cd $sysroot/usr/src/kernel/
-  ln -s ../../../boot/vmlinux-4.12.28-yocto-standard vmlinux
+ 
+  #echo "create symbolic link of vmlinux" 
+  #cd $sysroot/usr/src/kernel/
+  #ln -s ../../../boot/vmlinux-4.12.28-yocto-standard vmlinux
 }
 
 stap_hello()
@@ -452,21 +453,35 @@ stap()
   #use_rpm=1
   use_rpm=0
 
+  echo "INFO : use_rpm=$use_rpm"
+  echo "remove test_kernel.ko"
+  rm -f test_kernel.ko
+
+  systemtap_native="${work_dir}/build/tmp/work/x86_64-linux/systemtap-native"
+  sysroot_native="${systemtap_native}/3.1-r0/recipe-sysroot-native"
+  
+  if [ "$use_rpm" -ne 0 ]; then
+    stap="/usr/bin/stap"
+  else
+    stap="$sysroot_native/usr/bin/stap"
+  fi
+  
   if [ "$use_rpm" -ne 0 ]; then
     sysroot="${work_dir}/sysroot"
-
     options="$options -r $sysroot/usr/src/kernel"
-    options="$options --sysroot=$sysroot"
   else
-    systemtap_native="${work_dir}/build/tmp/work/x86_64-linux/systemtap-native"
-    sysroot_native="${systemtap_native}/3.1-r0/recipe-sysroot-native"
-  
-    #stap="/usr/bin/stap"
-    stap="$sysroot_native/usr/bin/stap"
-    
     options="$options -r $work_dir/build/tmp/work/qemuarm64-poky-linux/linux-yocto/4.12.28+gitAUTOINC+2ae65226f6_e562267bae-r0/linux-qemuarm64-standard-build"
-
+  fi
+  
+  if [ "$use_rpm" -ne 0 ]; then
+    options="$options -I /usr/share/systemtap/tapset"
+  else
     options="$options -I $sysroot_native/usr/share/systemtap/tapset"
+  fi
+
+  if [ "$use_rpm" -ne 0 ]; then
+    options="$options -R /usr/share/systemtap/runtime"
+  else
     options="$options -R $sysroot_native/usr/share/systemtap/runtime"
   fi
 
