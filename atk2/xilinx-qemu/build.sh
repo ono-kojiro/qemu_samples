@@ -7,10 +7,11 @@ cd $top_dir
 
 realname="qemu"
 pkgname="${realname}-xilinx"
-version="2021.2"
+version="2022.1"
 
 src_urls=""
 #src_urls="$src_urls https://github.com/Xilinx/qemu/archive/refs/tags/xilinx_v2021.2.tar.gz"
+#src_urls="$src_urls https://github.com/Xilinx/qemu/archive/refs/tags/xilinx_v${version}.tar.gz"
 src_urls="$src_urls https://github.com/Xilinx/qemu.git"
 
 url="https://github.com/Xilinx/qemu"
@@ -32,6 +33,12 @@ all()
   custom_install
   package
 }
+
+prepare()
+{
+  sudo apt -y install libglib2.0-dev libpixman-1-dev
+}
+
 
 fetch()
 {
