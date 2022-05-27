@@ -14,6 +14,8 @@ src_urls=""
 #src_urls="$src_urls https://www.toppers.jp/download.cgi/atk2-sc1-mc_zynqmp_r5_gcc-20190620.tar.gz"
 src_urls="$src_urls https://www.toppers.jp/download.cgi/atk2-sc1-mc_zynqmp_r5_gcc-20170929.tar.gz"
 
+src_urls="$src_urls https://www.toppers.jp/download.cgi/a-comstack-1.4.0.tar.gz"
+
 url="https://www.toppers.jp/index.html"
 
 sourcedir=$top_dir/work/sources
@@ -46,7 +48,7 @@ fetch()
             wget $src_url
             mv -f $archive $sourcedir/
         else
-            echo "skip wget"
+            echo "skip $src_url"
         fi
         ;;
       *.git )
@@ -73,19 +75,20 @@ extract()
   
   for src_url in $src_urls; do
     archive=`basename $src_url`
+    basename=`basename $src_url .tar.gz`
     case $src_url in
       *.gz )
-        if [ ! -d "${builddir}/${pkgname}_${version}" ]; then
+        if [ ! -d "${builddir}/${basename}" ]; then
           tar -C ${builddir} -xvf ${sourcedir}/${archive}
         else
-          echo "skip extract"
+          echo "skip $archive"
         fi
         ;;
       *.zip )
-        if [ ! -d "${builddir}/${pkgname}_${version}" ]; then
+        if [ ! -d "${builddir}/${basename}" ]; then
           unzip ${sourcedir}/${archive} -d ${builddir}
         else
-          echo "skip extract"
+          echo "skip $archive"
         fi
         ;;
       *.git )
