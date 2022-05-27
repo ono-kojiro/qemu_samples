@@ -7,11 +7,11 @@ cd $top_dir
 
 realname="qemu-devicetrees"
 pkgname="${realname}-xilinx"
-version="2021.2"
+version="2022.1"
 
 src_urls=""
 #src_urls="$src_urls https://github.com/Xilinx/qemu-devicetrees.git"
-src_urls="$src_urls https://github.com/Xilinx/qemu-devicetrees/archive/refs/tags/xilinx_v2021.2.tar.gz"
+src_urls="$src_urls https://github.com/Xilinx/qemu-devicetrees/archive/refs/tags/xilinx_v${version}.tar.gz"
 
 url="https://github.com/Xilinx/qemu-devicetrees"
 
@@ -21,6 +21,25 @@ destdir=$top_dir/work/dest/${pkgname}-${version}
 
 outputdir=$top_dir
 
+help()
+{
+  cat - << 'EOS'
+  fetch
+  extract
+  configure
+  compile
+  install
+  custom_install
+  package
+EOS
+
+}
+
+prepare()
+{
+  sudo apt -y install python-is-python3
+  sudo apt -y install device-tree-compiler
+}
 
 all()
 {
