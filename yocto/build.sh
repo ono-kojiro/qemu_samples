@@ -192,7 +192,7 @@ IMAGE_INSTALL_append = " dropbear"
 
 
 IMAGE_INSTALL_append = " systemtap"
-IMAGE_INSTALL_append = " packagegroup-core-buildessential"
+#IMAGE_INSTALL_append = " packagegroup-core-buildessential"
 IMAGE_INSTALL_append = " coreutils"
 
 IMAGE_INSTALL_append = " lxc cgroup-lite"
@@ -233,7 +233,8 @@ build()
 disk()
 {
   if [ ! -e "$disk1" ]; then
-    cmd="dd if=/dev/zero of=$disk1 bs=1024K count=65536"
+    #cmd="dd if=/dev/zero of=$disk1 bs=1024K count=65536"
+    cmd="dd if=/dev/zero of=$disk1 bs=1024K count=4096"
     echo $cmd
     $cmd
   else
@@ -257,7 +258,7 @@ run()
 
   disk
 
-  runqemu nographic ${machine} \
+  runqemu nographic slirp ${machine} \
     qemuparams="$params" bootparams="$bootparams" \
     $image
   cd $top_dir
