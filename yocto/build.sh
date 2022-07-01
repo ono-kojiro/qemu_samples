@@ -17,18 +17,23 @@ sysroot="${work_dir}/sysroot"
     
 disk1="${top_dir}/disk1.ext4"
 
-tools="chrpath gawk makeinfo"
-for tool in $tools; do
-  which $tool > /dev/null 2>&1
-  res=$?
-
-  if [ "$res" != "0" ]; then
-    echo "ERROR : need $tool"
-    exit 1
-  fi
-done
-
 release="4.12.28-yocto-standard"
+
+check_tool()
+{
+  tools="chrpath gawk makeinfo gcc make python diffstat"
+  for tool in $tools; do
+    which $tool > /dev/null 2>&1
+    res=$?
+
+    if [ "$res" != "0" ]; then
+      echo "ERROR : need $tool"
+      exit 1
+    else
+      echo "INFO : found $tool"
+    fi
+  done
+}
 
 help()
 {
@@ -37,17 +42,25 @@ help()
 
 usage()
 {
-	echo "usage : $0 [options] target1 target2 ..."
-    echo ""
-    echo "  target"
-    echo "    clone, checkout, config, build"
-    echo "    run"
-    echo "    clean, mclean"
-    echo "    show_layers, show_recipes, show_images"
-    echo ""
-    echo "  variables"
-    echo "    work_dir   $work_dir"
-	exit 0
+  echo "usage : $0 [options] target1 target2 ..."
+  echo ""
+  echo "  target"
+  echo "    clone, checkout, config, build"
+  echo "    run"
+  echo "    clean, mclean"
+  echo "    show_layers, show_recipes, show_images"
+  echo ""
+  echo "  variables"
+  echo "    work_dir   $work_dir"
+  exit 0
+}
+
+prepare()
+{
+  tools="chrpath gawk texinfo gcc g++ make python-minimal diffstat"
+  for tool in $tools; do
+    sudo apt install $tool
+  done
 }
 
 all()
@@ -57,8 +70,8 @@ all()
         
 clone()
 {
-    mkdir -p $work_dir
-    cd $work_dir
+    mkdir -p $src_dir
+    cd $src_dir
 
     if [ ! -d meta-openembedded ]; then
         git clone \
@@ -210,6 +223,11 @@ image()
   echo $cmd
   $cmd
   cd ${top_dir}
+}
+
+build()
+{
+  image
 }
 
 disk()
