@@ -157,7 +157,7 @@ BBLAYERS_append = " $src_dir/meta-openembedded/meta-python"
 BBLAYERS_append = " $src_dir/meta-openembedded/meta-networking"
 BBLAYERS_append = " $src_dir/meta-openembedded/meta-filesystems"
 BBLAYERS_append = " $src_dir/meta-virtualization"
-#BBLAYERS_append = " $top_dir/meta-misc"
+BBLAYERS_append = " $top_dir/meta-misc"
 
 EOS
      
@@ -201,7 +201,7 @@ IMAGE_INSTALL_append = " coreutils"
 
 IMAGE_INSTALL_append = " lxc cgroup-lite"
 #IMAGE_INSTALL_append = " docker docker-contrib"
-IMAGE_INSTALL_append = " docker"
+IMAGE_INSTALL_append = " docker-ce"
 
 IMAGE_GEN_DEBUGFS = "1"
 IMAGE_FSTYPES = "ext4 tar.bz2"
@@ -251,8 +251,9 @@ disk()
 
 run()
 {
-  cd ${work_dir}
-  OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
+  cd ${src_dir}/poky
+  BDIR=${work_dir}/build . ./oe-init-build-env
+  cd $work_dir/build
   
   params="-m 4096"
   params="$params -smp 4"
@@ -273,26 +274,32 @@ run()
 
 show_images()
 {
-  cd ${work_dir}
-  OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
+  cd ${src_dir}/poky
+  BDIR=${work_dir}/build . ./oe-init-build-env
+  cd $work_dir/build
+
   bitbake-layers show-recipes | grep 'core-image-'
-  cd $top_dir
+  
+  cd ${top_dir}
 }
 
 show_recipes()
 {
-  cd ${work_dir}
-  OEROOT=${src_dir}/poky . ${src_dir}/poky/oe-init-build-env
+  cd ${src_dir}/poky
+  BDIR=${work_dir}/build . ./oe-init-build-env
+  cd $work_dir/build
+  
   bitbake-layers show-recipes
-  cd $top_dir
+  
+  cd ${top_dir}
 }
 
 show_layers()
 {
-    cd $work_dir
-    OEROOT=$work_dir/poky . ./poky/oe-init-build-env
-    bitbake-layers show-layers
-    cd $top_dir
+  cd $work_dir
+  OEROOT=$work_dir/poky . ./poky/oe-init-build-env
+  bitbake-layers show-layers
+  cd ${top_dir}
 }
 
 info()
