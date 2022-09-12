@@ -3,7 +3,6 @@ project(kernel LANGUAGES C ASM)
 set(BINARY_FILES "initcode entryother")
 
 # change link command
-set(CMAKE_LINKER ld)
 set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> -o <TARGET> <OBJECTS> <LINK_LIBRARIES> -b binary ${BINARY_FILES}")
 
 add_custom_command(

@@ -18,6 +18,10 @@ set(CMAKE_C_COMPILER "${TARGET}gcc")
 
 project(xv6_cmake LANGUAGES C ASM)
 
+set(CMAKE_LINKER ld)
+set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> -o <TARGET> <OBJECTS>")
+set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> -o <TARGET> <OBJECTS>")
+
 add_subdirectory(bootblock ${CMAKE_CURRENT_BINARY_DIR}/bootblock)
 add_subdirectory(bootblockother ${CMAKE_CURRENT_BINARY_DIR}/bootblockother)
 add_subdirectory(initcode  ${CMAKE_CURRENT_BINARY_DIR}/initcode)

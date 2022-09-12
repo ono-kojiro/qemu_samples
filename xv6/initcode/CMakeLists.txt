@@ -1,9 +1,5 @@
 project(initcode LANGUAGES ASM)
 
-# change link command
-set(CMAKE_LINKER ld)
-set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> -o <TARGET> <OBJECTS>")
-
 add_executable(${PROJECT_NAME}
   ${XV6_SOURCE_DIR}/initcode.S
 )
