@@ -8,7 +8,8 @@ cd $top_dir
 #linux_url=https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.4.177.tar.xz
 #linux_url=http://ftp.jaist.ac.jp/pub/Linux/kernel.org/linux/kernel/v5.x/linux-5.4.167.tar.xz
 #linux_url=http://ftp.jaist.ac.jp/pub/Linux/kernel.org/linux/kernel/v5.x/linux-5.10.149.tar.xz
-linux_url=http://ftp.jaist.ac.jp/pub/Linux/kernel.org/linux/kernel/v5.x/linux-5.15.74.tar.xz
+#linux_url=http://ftp.jaist.ac.jp/pub/Linux/kernel.org/linux/kernel/v5.x/linux-5.15.74.tar.xz
+linux_url=http://ftp.jaist.ac.jp/pub/Linux/kernel.org/linux/kernel/v6.x/linux-6.0.3.tar.xz
 
 #busybox_url=https://busybox.net/downloads/busybox-1.34.1.tar.bz2
 busybox_url=https://busybox.net/downloads/busybox-1.35.0.tar.bz2
