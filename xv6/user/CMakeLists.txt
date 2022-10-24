@@ -1,8 +1,4 @@
-#project(user LANGUAGES C ASM)
-
-# change link command
-set(CMAKE_LINKER ld)
-set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> -o <TARGET> <OBJECTS>")
+project(user LANGUAGES C ASM)
 
 set(ULIB_C
   ${XV6_SOURCE_DIR}/ulib.c

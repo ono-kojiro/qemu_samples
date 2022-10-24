@@ -1,5 +1,7 @@
 project(mkfs LANGUAGES C)
 
+set(CMAKE_LINKER gcc)
+
 add_executable(${PROJECT_NAME}
   ${XV6_SOURCE_DIR}/mkfs.c
 )

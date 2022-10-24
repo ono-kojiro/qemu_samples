@@ -12,6 +12,12 @@ help()
   echo "    fetch, config, build, run, clean mclean"
 }
 
+prepare()
+{
+  sudo apt install libgcc-7-dev-i386-cross
+  sudo apt install qemu-system-x86
+}
+
 all()
 {
   fetch
@@ -67,8 +73,8 @@ clean()
 mclean()
 {
   rm -rf $build_dir
-  rm -rf xv6-net
-  rm -rf xv6-public
+  #rm -rf xv6-net
+  #rm -rf xv6-public
 }
 
 if [ $# -eq 0 ]; then
