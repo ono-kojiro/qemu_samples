@@ -137,7 +137,7 @@ set_target_properties(${PROJECT_NAME}
 
 set_target_properties(${PROJECT_NAME}
 	PROPERTIES LINK_LIBRARIES
-	"-L/usr/lib/gcc-cross/i686-linux-gnu/7/ -lgcc"
+	"-L/usr/lib/gcc-cross/i686-linux-gnu/11/ -lgcc"
 )
 
 

@@ -14,7 +14,7 @@ help()
 
 prepare()
 {
-  sudo apt install libgcc-7-dev-i386-cross
+  sudo apt install libgcc-11-dev-i386-cross
   sudo apt install qemu-system-x86
 }
 

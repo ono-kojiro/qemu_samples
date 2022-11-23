@@ -41,7 +41,7 @@ target_include_directories(${PROJECT_NAME}
 
 set_target_properties(${PROJECT_NAME}
 	PROPERTIES LINK_FLAGS
-	"-m elf_i386 -nodefaultlibs -N -e start -Ttext 0x7000"
+	"-m elf_i386 -N -e start -Ttext 0x7000"
 )
 
 

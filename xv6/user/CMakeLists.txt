@@ -52,7 +52,7 @@ target_compile_options(${project} PRIVATE "-fno-stack-protector")
 #)
 set_target_properties(${PROJECT_NAME}
 	PROPERTIES LINK_FLAGS
-	"-m elf_i386 -nodefaultlibs -N -e main -Ttext 0x0"
+	"-m elf_i386 -N -e main -Ttext 0x0"
 )
 
 
