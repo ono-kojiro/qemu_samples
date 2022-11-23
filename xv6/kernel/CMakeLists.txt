@@ -1,9 +1,12 @@
+include(${CMAKE_SOURCE_DIR}/initcode/CMakeLists.txt)
+include(${CMAKE_SOURCE_DIR}/bootblockother/CMakeLists.txt)
+
 project(kernel LANGUAGES C ASM)
 
 set(BINARY_FILES "initcode entryother")
 
 # change link command
-set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> -o <TARGET> <OBJECTS> <LINK_LIBRARIES> -b binary ${BINARY_FILES}")
+set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <LINK_FLAGS> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>")
 
 add_custom_command(
   OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/vectors.S
@@ -137,7 +140,7 @@ set_target_properties(${PROJECT_NAME}
 
 set_target_properties(${PROJECT_NAME}
 	PROPERTIES LINK_LIBRARIES
-	"-L/usr/lib/gcc-cross/i686-linux-gnu/11/ -lgcc"
+	"-L/usr/lib/gcc-cross/i686-linux-gnu/11/ -lgcc -b binary ${BINARY_FILES}"
 )
 
 
@@ -147,7 +150,7 @@ set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS) # remove -rdynamic option
 add_custom_command(TARGET ${PROJECT_NAME}
   PRE_BUILD
 	COMMAND mkdir -p out
-	COMMAND cp -f ../initcode/initcode .
-	COMMAND cp -f ../bootblockother/entryother .
+	COMMAND cp -f ./initcode ../
+	COMMAND cp -f ./entryother ../
 )
 
