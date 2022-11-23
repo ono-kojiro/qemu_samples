@@ -3,7 +3,21 @@
 top_dir="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 cd $top_dir
 
-build_dir=_build
+build_system="make"
+#build_system="ninja"
+
+case $build_system in
+  make )
+    build_dir="_build"
+    ;;
+  ninja )
+    build_dir="_ninja"
+    ;;
+  * )
+    echo "unknown build system, $build_system"
+    exit 1
+    ;;
+esac
 
 help()
 {
@@ -44,14 +58,31 @@ config()
 {
   mkdir -p $build_dir
   cd $build_dir
-  cmake -G "Unix Makefiles" ..
+
+  case $build_system in
+    make )
+      cmake -G "Unix Makefiles" ..
+      ;;
+    ninja )
+      cmake -G "Ninja" ..
+      ;;
+  esac
+
   cd $top_dir
 }
 
 build()
 {
   cd $build_dir
-  make VERBOSE=1
+  case $build_system in
+    make )
+      make VERBOSE=1
+      ;;
+    ninja )
+      ninja
+      ;;
+  esac
+
   cd $top_dir
 }
 
