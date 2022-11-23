@@ -8,7 +8,7 @@ build_system="make"
 
 case $build_system in
   make )
-    build_dir="_build"
+    build_dir="_make"
     ;;
   ninja )
     build_dir="_ninja"
@@ -76,7 +76,7 @@ build()
   cd $build_dir
   case $build_system in
     make )
-      make VERBOSE=1
+      make -j VERBOSE=1
       ;;
     ninja )
       ninja
