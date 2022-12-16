@@ -18,6 +18,18 @@ sysroot="${work_dir}/sysroot"
 disk1="${top_dir}/disk1.ext4"
 
 release="4.12.28-yocto-standard"
+    
+urls="
+ https://git.openembedded.org/meta-openembedded
+ https://git.yoctoproject.org/git/meta-virtualization
+ https://git.yoctoproject.org/git/meta-cloud-services
+ https://git.yoctoproject.org/git/poky
+"
+
+layers=""
+for url in $urls; do
+  layers="$layers $(basename $url)"
+done
 
 check_tool()
 {
@@ -68,68 +80,32 @@ all()
         
 clone()
 {
-    mkdir -p $src_dir
-    cd $src_dir
+  mkdir -p $src_dir
+  cd $src_dir
 
-    if [ ! -d meta-openembedded ]; then
-        git clone \
-            https://git.openembedded.org/meta-openembedded
+  for url in $urls; do
+    dirname=$(basename $url)
+    if [ ! -d "$dirname" ]; then
+      git clone $url
     else
-        echo skip to clone meta-openembedded
+      echo "skip to clone $url"
     fi
+  done
 
-    if [ ! -d meta-virtualization ]; then
-        git clone \
-            https://git.yoctoproject.org/git/meta-virtualization
-    else
-        echo skip to clone meta-virtualization
-    fi
-
-    if [ ! -d meta-cloud-services ]; then
-        git clone \
-          https://git.yoctoproject.org/git/meta-cloud-services
-    else
-        echo skip to clone meta-cloud-services
-    fi
-
-    if [ ! -d poky ]; then
-        git clone \
-            https://git.yoctoproject.org/git/poky
-    else
-        echo skip to clone poky
-    fi
-
-    cd $top_dir
+  cd $top_dir
 }
 
-checkout()
+update()
 {
     cd ${src_dir}
-    pwd
-    if [ ! -d meta-openembedded ]; then
-        echo ERROR : no meta-openembedded directory
-    else
-        git -C meta-openembedded checkout $branch
-    fi
-
-    if [ ! -d meta-virtualization ]; then
-        echo ERROR : no meta-virtualization directory
-    else
-        git -C meta-virtualization checkout $branch
-    fi
-    
-    if [ ! -d meta-cloud-services ]; then
-        echo ERROR : no meta-cloud-services directory
-    else
-     	git -C meta-cloud-services checkout $branch
-    fi
-
-    if [ ! -d poky ]; then
-        echo ERROR : no poky directory
-    else
-        git -C poky checkout $branch
-    fi
-
+    for layer in $layers; do
+      if [ ! -d "$layer" ]; then
+        echo ERROR : no $layer directory
+      else
+        echo "update $layer ..."
+        git -C $layer pull
+      fi
+    done
     cd $top_dir
 }
 
@@ -157,7 +133,7 @@ BBLAYERS_append = " $src_dir/meta-openembedded/meta-python"
 BBLAYERS_append = " $src_dir/meta-openembedded/meta-networking"
 BBLAYERS_append = " $src_dir/meta-openembedded/meta-filesystems"
 BBLAYERS_append = " $src_dir/meta-virtualization"
-BBLAYERS_append = " $top_dir/meta-misc"
+#BBLAYERS_append = " $top_dir/meta-misc"
 
 EOS
      
@@ -199,9 +175,9 @@ IMAGE_INSTALL_append = " systemtap"
 #IMAGE_INSTALL_append = " packagegroup-core-buildessential"
 IMAGE_INSTALL_append = " coreutils"
 
-IMAGE_INSTALL_append = " lxc cgroup-lite"
+#IMAGE_INSTALL_append = " lxc cgroup-lite"
 #IMAGE_INSTALL_append = " docker docker-contrib"
-IMAGE_INSTALL_append = " docker-ce"
+#IMAGE_INSTALL_append = " docker-ce"
 
 IMAGE_GEN_DEBUGFS = "1"
 IMAGE_FSTYPES = "ext4 tar.bz2"
