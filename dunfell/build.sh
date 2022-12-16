@@ -78,11 +78,32 @@ all()
 	help
 }
 
-debug()
+create_layer()
 {
-  bitbake-layers create-layer mylayer
+  cd ${src_dir}/poky
+  BDIR=${work_dir}/build . ./oe-init-build-env
+  cd ${work_dir}/build
+
+  cd ${top_dir}
+  bitbake-layers create-layer meta-mylayer
 }
-        
+
+add_layer()
+{
+  cd ${src_dir}/poky
+  BDIR=${work_dir}/build . ./oe-init-build-env
+  cd ${work_dir}/build
+  bitbake-layers add-layer ../../meta-mylayer
+}
+
+
+create_recipe()
+{
+  #meta-mylayer/recipes-example/example/example_0.1.bb
+  rm -rf   meta-mylayer/recipes-mycategory/myapp
+  mkdir -p meta-mylayer/recipes-mycategory/myapp
+  cp -f myapp_0.0.1.bb meta-mylayer/recipes-mycategory/myapp/
+}
         
 clone()
 {
@@ -213,6 +234,22 @@ image()
   $cmd
   cd ${top_dir}
 }
+
+default_target()
+{
+  target=$1
+  shift
+
+  cd ${src_dir}/poky
+  BDIR=${work_dir}/build . ./oe-init-build-env
+
+  cd $work_dir/build
+  cmd="bitbake $opts ${target}"
+  echo $cmd
+  $cmd
+  cd ${top_dir}
+}
+
 
 build()
 {
